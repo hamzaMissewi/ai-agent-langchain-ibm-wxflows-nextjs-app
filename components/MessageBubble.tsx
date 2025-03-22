@@ -1,5 +1,4 @@
 "use client";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from "@clerk/nextjs";
 import { BotIcon } from "lucide-react";
@@ -51,6 +50,8 @@ export function MessageBubble({ content, isUser }: MessageBubbleProps) {
             } flex items-center justify-center shadow-sm`}
           >
             {isUser ? (
+              <>
+               {/*<p>avatar</p>*/}
               <Avatar className="h-7 w-7">
                 <AvatarImage src={user?.imageUrl} />
                 <AvatarFallback>
@@ -58,6 +59,7 @@ export function MessageBubble({ content, isUser }: MessageBubbleProps) {
                   {user?.lastName?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
+              </>
             ) : (
               <BotIcon className="h-5 w-5 text-white" />
             )}

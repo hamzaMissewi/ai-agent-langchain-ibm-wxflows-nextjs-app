@@ -35,6 +35,9 @@ yarn-error.log*
 !.env.example
 
 
+**/*ignore*
+**/*txt*
+
 # vercel
 .vercel
 

@@ -1,6 +1,8 @@
 # Let's build an AI Agent that can use Tools in NEXT.JS 15! (LangChain, Clerk, Convex, TS, IBM)
 
-An AI chat application built with Next.js, featuring real-time conversations, advanced prompt caching, and intelligent tool orchestration powered by LangChain and Claude 3.5 Sonnet.
+A sophisticated AI chat application built with Next.js, featuring real-time conversations, advanced prompt caching, and intelligent tool orchestration powered by LangChain and Claude 3.5 Sonnet.
+
+## Before You Get Started
 
 1. [Sign up for a Free Clerk account](https://go.clerk.com/R9MPryz)
 2. [Sign up for IBM's FREE WxFlows tool](https://ibm.biz/wxflows-sonny)

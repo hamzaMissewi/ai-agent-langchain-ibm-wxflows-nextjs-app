@@ -3,24 +3,23 @@ import {
   BaseMessage,
   HumanMessage,
   SystemMessage,
-  trimMessages
+  trimMessages,
 } from "@langchain/core/messages";
-// import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatAnthropic } from "@langchain/anthropic";
 import {
   END,
   MessagesAnnotation,
   START,
-  StateGraph
+  StateGraph,
 } from "@langchain/langgraph";
 import { MemorySaver } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import wxflows from "@wxflows/sdk/langchain";
 import {
   ChatPromptTemplate,
-  MessagesPlaceholder, PromptTemplate
+  MessagesPlaceholder,
 } from "@langchain/core/prompts";
 import SYSTEM_MESSAGE from "@/constants/systemMessage";
-import { ChatGroq } from "@langchain/groq";
 
 // Trim the messages to manage conversation history
 const trimmer = trimMessages({
@@ -29,47 +28,32 @@ const trimmer = trimMessages({
   tokenCounter: (msgs) => msgs.length,
   includeSystem: true,
   allowPartial: false,
-  startOn: "human"
+  startOn: "human",
 });
 
 // Connect to wxflows
 const toolClient = new wxflows({
   endpoint: process.env.WXFLOWS_ENDPOINT || "",
-  apikey: process.env.WXFLOWS_APIKEY
+  apikey: process.env.WXFLOWS_APIKEY,
 });
 
 // Retrieve the tools
 const tools = await toolClient.lcTools;
 const toolNode = new ToolNode(tools);
 
-const ANSWER_TEMPLATE =
-  `Role: You are a helpful assistant for NeuroMastery Bootcamp by Dr. Siddharth Warrier. 
-Answer the question based only on the following context and chat history:
-<context>
-  {context}
-</context>
-
-<chat_history>
-  {chat_history}
-</chat_history>
-
-Question: {question}
-`;
-
 // Connect to the LLM provider with better tool instructions
 const initialiseModel = () => {
-  const model = new ChatGroq({
-    // model: "deepseek-r1-distill-qwen-32b",
-    model: "mixtral-8x7b-32768",
-    apiKey: process.env.GROQ_API_KEY,
+  const model = new ChatAnthropic({
+    model: "claude-3-5-sonnet-20241022",
+    anthropicApiKey: process.env.ANTHROPIC_API_KEY,
     temperature: 0.7,
     maxTokens: 4096,
     streaming: true,
-    // clientOptions: {
-    //   defaultHeaders: {
-    //     "anthropic-beta": "prompt-caching-2024-07-31",
-    //   },
-    // },
+    clientOptions: {
+      defaultHeaders: {
+        "anthropic-beta": "prompt-caching-2024-07-31",
+      },
+    },
     callbacks: [
       {
         handleLLMStart: async () => {
@@ -88,12 +72,12 @@ const initialiseModel = () => {
             //   cache_read_input_tokens: usage.cache_read_input_tokens || 0,
             // });
           }
-        }
+        },
         // handleLLMNewToken: async (token: string) => {
         //   // console.log("🔤 New token:", token);
         // },
-      }
-    ]
+      },
+    ],
   }).bindTools(tools);
 
   return model;
@@ -127,28 +111,19 @@ const createWorkflow = () => {
       // Create the system message content
       const systemContent = SYSTEM_MESSAGE;
 
-      const answerPrompt = PromptTemplate.fromTemplate(ANSWER_TEMPLATE);
-
-
       // Create the prompt template with system message and messages placeholder
       const promptTemplate = ChatPromptTemplate.fromMessages([
         new SystemMessage(systemContent, {
-          cache_control: { type: "ephemeral" }
+          cache_control: { type: "ephemeral" },
         }),
-        new MessagesPlaceholder("messages")
+        new MessagesPlaceholder("messages"),
       ]);
 
       // Trim the messages to manage conversation history
       const trimmedMessages = await trimmer.invoke(state.messages);
 
-      const previousMessages = state.messages.slice(0, -1);
-      const currentMessageContent = state.messages[state.messages.length - 1].content;
-
       // Format the prompt with the current messages
-      // const prompt = await promptTemplate.invoke({ messages: trimmedMessages });
-      // const prompt = await promptTemplate.invoke({ messages: currentMessageContent });
-
-      // const answer = await answerPrompt.invoke(currentMessageContent);
+      const prompt = await promptTemplate.invoke({ messages: trimmedMessages });
 
       // Get response from the model
       const response = await model.invoke(prompt);
@@ -173,8 +148,8 @@ function addCachingHeaders(messages: BaseMessage[]): BaseMessage[] {
       {
         type: "text",
         text: message.content as string,
-        cache_control: { type: "ephemeral" }
-      }
+        cache_control: { type: "ephemeral" },
+      },
     ];
   };
 
@@ -200,28 +175,24 @@ function addCachingHeaders(messages: BaseMessage[]): BaseMessage[] {
 
 export async function submitQuestion(messages: BaseMessage[], chatId: string) {
   // Add caching headers to messages
-  try {
-    const cachedMessages = addCachingHeaders(messages);
-    console.log("🔒🔒🔒 Messages:", cachedMessages);
+  const cachedMessages = addCachingHeaders(messages);
+  // console.log("🔒🔒🔒 Messages:", cachedMessages);
 
-    // Create workflow with chatId and onToken callback
-    const workflow = createWorkflow();
+  // Create workflow with chatId and onToken callback
+  const workflow = createWorkflow();
 
-    // Create a checkpoint to save the state of the conversation
-    const checkpointer = new MemorySaver();
-    const app = workflow.compile({ checkpointer });
+  // Create a checkpoint to save the state of the conversation
+  const checkpointer = new MemorySaver();
+  const app = workflow.compile({ checkpointer });
 
-    const stream = await app.streamEvents(
-      { messages: cachedMessages },
-      {
-        version: "v2",
-        configurable: { thread_id: chatId },
-        streamMode: "messages",
-        runId: chatId
-      }
-    );
-    return stream;
-  } catch (error) {
-    throw new Error(`Error to submit question, Error ${JSON.stringify(error)}`);
-  }
+  const stream = await app.streamEvents(
+    { messages: cachedMessages },
+    {
+      version: "v2",
+      configurable: { thread_id: chatId },
+      streamMode: "messages",
+      runId: chatId,
+    }
+  );
+  return stream;
 }
