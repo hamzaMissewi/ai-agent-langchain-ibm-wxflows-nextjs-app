@@ -68,3 +68,10 @@ export interface ChatRequestBody {
   newMessage: string;
   chatId: Id<"chats">;
 }
+
+export enum FreeLLModelsEnum {
+  llama3 = "llama3-8b-8192",
+  deepseek = "deepseek-r1-distill-qwen-32b",
+  //  "deepseek-ai/deepseek-llm-67b-chat",
+  mixtral = "mixtral-8x7b-32768",
+}

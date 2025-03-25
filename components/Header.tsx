@@ -1,6 +1,6 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
+import { ClerkProvider, UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { HamburgerMenuIcon } from "@radix-ui/react-icons";
 import { useNavigation } from "@/lib/context/navigation";
@@ -25,15 +25,17 @@ export default function Header() {
           </div>
         </div>
         <div className="flex items-center">
+        {/* <ClerkProvider> */}
           <UserButton
-            afterSignOutUrl="/"
+            // afterSignOutUrl="/"
             appearance={{
               elements: {
                 avatarBox:
-                  "h-8 w-8 ring-2 ring-gray-200/50 ring-offset-2 rounded-full transition-shadow hover:ring-gray-300/50",
+                "h-8 w-8 ring-2 ring-gray-200/50 ring-offset-2 rounded-full transition-shadow hover:ring-gray-300/50",
               },
             }}
-          />
+            />
+            {/* </ClerkProvider> */}
         </div>
       </div>
     </header>
